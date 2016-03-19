@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import os
+import sys
+import webbrowser
 import pyqrcode
 import requests
 import json
@@ -9,15 +12,25 @@ import urllib
 import time
 import re
 import random
-import webbrowser
 from requests.exceptions import ConnectionError, ReadTimeout
 import HTMLParser
-from PIL import Image
 
 UNKONWN = 'unkonwn'
 SUCCESS = '200'
 SCANED  = '201'
 TIMEOUT = '408'
+
+def show_image(file):
+    if sys.version_info >= (3, 3):
+        from shlex import quote
+    else:
+        from pipes import quote
+
+    if sys.platform == "darwin":
+        command = "open -a /Applications/Preview.app %s&" % quote(file)
+        os.system(command)
+    else :
+        webbrowser.open(file)
 
 class WXBot:
     """WXBot, a framework to process WeChat messages"""
@@ -677,12 +690,12 @@ class WXBot:
         self.get_uuid()
         self.gen_qr_code('qr.png')
         print '[INFO] Please use WeChat to scan the QR code .'
-        
+
         result = self.wait4login()
         if result != SUCCESS:
             print '[ERROR] Web WeChat login failed. failed code=%s'%(result, )
             return
-        
+
         if self.login():
             print '[INFO] Web WeChat login succeed .'
         else:
@@ -724,9 +737,9 @@ class WXBot:
         qr = pyqrcode.create(string)
         if self.conf['qr'] == 'png':
             qr.png(qr_file_path, scale=8)
-            # webbrowser.open(qr_file_path)
-            img = Image.open(qr_file_path)
-            img.show()
+            show_image(qr_file_path)
+            # img = Image.open(qr_file_path)
+            # img.show()
         elif self.conf['qr'] == 'tty':
             print(qr.terminal(quiet_zone=1))
 
@@ -741,10 +754,10 @@ class WXBot:
     def wait4login(self):
         '''
         http comet:
-        tip=1, the request wait for user to scan the qr, 
+        tip=1, the request wait for user to scan the qr,
                201: scaned
                408: timeout
-        tip=0, the request wait for user confirm, 
+        tip=0, the request wait for user confirm,
                200: confirmed
         '''
         LOGIN_TEMPLATE = 'https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login?tip=%s&uuid=%s&_=%s'
@@ -752,9 +765,9 @@ class WXBot:
 
         try_later_secs = 1
         MAX_RETRY_TIMES = 10
-        
+
         code = UNKONWN
-        
+
         retry_time = MAX_RETRY_TIMES
         while retry_time > 0:
             url = LOGIN_TEMPLATE % (tip, self.uuid, int(time.time()))
@@ -775,12 +788,12 @@ class WXBot:
                 retry_time -= 1
                 time.sleep(try_later_secs)
             else:
-                print ('[ERROR] WeChat login exception return_code=%s. retry in %s secs later...' % 
+                print ('[ERROR] WeChat login exception return_code=%s. retry in %s secs later...' %
                         (code, try_later_secs))
                 tip = 1
                 retry_time -= 1
                 time.sleep(try_later_secs)
-            
+
         return code
 
     def login(self):
