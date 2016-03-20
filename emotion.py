@@ -12,8 +12,8 @@ class Emotion_api(WXBot):
         self.emotion_key = os.environ.get("emotion_key") or 'NULL'
         self.robot_switch = False
     
-    def emotion_api(self, url):
-        print url
+    def emotion_api(self, uid, url):
+        return url
 
     def auto_switch(self, msg):
         msg_data = msg['content']['data']
@@ -37,6 +37,7 @@ class Emotion_api(WXBot):
             self.auto_switch(msg)
         elif msg['msg_type_id'] == 3 and msg['content']['type'] == 0:
             if 'detail' in msg['content']:
+                
                 my_names = self.get_group_member_name(self.my_account['UserName'], msg['user']['id'])
                 if my_names is None:
                     my_names = {}
@@ -55,10 +56,11 @@ class Emotion_api(WXBot):
                 if is_at_me:
                     self.auto_switch(msg)
 
-        if self.robot_switch:
-            if msg['msg_type_id'] == 4 or msg['msg_type_id'] == 3:
-                if msg['content']['type'] == 3:
-                    self.emotion_api(msg['content']['data'])
+        if self.robot_switch and msg['content']['type'] == 3:
+            if msg['msg_type_id'] == 4:
+                self.send_msg_by_uid(self.emotion_api(msg['user']['id'], msg['content']['data']), msg['user']['id'])
+            elif msg['msg_type_id'] == 3:
+                self.send_msg_by_uid(self.emotion_api(msg['content']['user']['id'], msg['content']['desc']), msg['user']['id'])
 
 def main():
     bot = Emotion_api()
