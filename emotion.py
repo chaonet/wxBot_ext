@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import os
+import os,json
 import httplib, urllib, base64
+import requests
 from wxbot import *
 
 import ConfigParser
+
 
 class Emotion_api(WXBot):
     
@@ -22,43 +24,37 @@ class Emotion_api(WXBot):
 
         self.headers = {
         # Request headers
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/octet-stream',
         'Ocp-Apim-Subscription-Key': self.emotion_key ,
         }
 
-        self.data = {'url': ''}
-        self.body = ''
+        self.emotion_max = ''
     
-    def emotion_api(self, uid, url):
+    def emotion_api(self, uid, url, msg_id):
         if self.emotion_key == 'NULL':
             return
-        self.data['url'] = str(url)
-        # https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg?MsgID=5544385610890911816&skey=@crypt_115bea6f_8dc493994755faf3c3f903e5cd66ece4
-        print url,1
-        print self.data['url']
-        print type(url)
-        # <type 'unicode'>
-        print type(self.data['url'])
-        # <type 'str'>
+        print msg_id
 
-        # self.data['url'] = 'http://t1.qpic.cn/mblogpic/c4e7677ac8cb9a4068f6/160'
-        self.body = json.dumps(self.data)
+        fn = 'img_' + msg_id + '.jpg'
+
+        print fn
+        b = open(fn, 'rb')
+        print b
 
         try:
             conn = httplib.HTTPSConnection('api.projectoxford.ai')
-            conn.request("POST", "/emotion/v1.0/recognize", self.body, self.headers)
+            conn.request("POST", "/emotion/v1.0/recognize", b, self.headers)
             response = conn.getresponse()
-            data = json.loads(response.read())
-            # print data[0]['scores']
-            print data, 1
-            # {u'error': {u'message': u'Image size is too small or too big.', u'code': u'InvalidImageSize'}} 1
+            data = response.read()
+
+            data = json.loads(data)
 
             emotion_list = [u'sadness', u'neutral', u'contempt', u'disgust', u'anger', u'surprise', u'fear', u'happiness']
-            emotion_max = ''
+            
             max_value = 0
             for i in emotion_list:
                 if data[0]['scores'][i] > max_value:
-                    emotion_max = i
+                    self.emotion_max = i
                     max_value = data[0]['scores'][i]
 
             conn.close()
@@ -66,7 +62,7 @@ class Emotion_api(WXBot):
             print 2
             print e
         emotion_dir = {u'sadness': u'很悲伤', u'neutral': u'不动声色', u'contempt': u'轻蔑', u'disgust': u'厌恶', u'anger': u'生气', u'surprise': u'惊讶', u'fear': u'害怕', u'happiness': u'开心'}
-        return emotion_dir[emotion_max]
+        return emotion_dir[self.emotion_max]
 
     def auto_switch(self, msg):
         msg_data = msg['content']['data']
@@ -76,12 +72,14 @@ class Emotion_api(WXBot):
             if msg_data in stop_cmd:
                 self.robot_switch = False
                 self.send_msg_by_uid(u'[Robot]' + u'机器人已停止判断情绪！', msg['to_user_id'])
-                # self.send_msg_by_uid(u'[Robot]' + u'机器人已停止判断情绪！', msg['FromUserName'])
+
+                self.send_msg_by_uid(u'[Robot]' + u'机器人已停止判断情绪！', msg['user']['id'])
         else:
             if msg_data in start_cmd:
                 self.robot_switch = True
                 self.send_msg_by_uid(u'[Robot]' + u'机器人已开始判断情绪！', msg['to_user_id'])
-                # self.send_msg_by_uid(u'[Robot]' + u'机器人已开始判断情绪！', msg['FromUserName'])
+ 
+                self.send_msg_by_uid(u'[Robot]' + u'机器人已开始判断情绪！', msg['user']['id'])
 
     def handle_msg_all(self, msg):
         if msg['msg_type_id'] == 1:
@@ -111,9 +109,9 @@ class Emotion_api(WXBot):
 
         if self.robot_switch and msg['content']['type'] == 3:
             if msg['msg_type_id'] == 4:
-                self.send_msg_by_uid(self.emotion_api(msg['user']['id'], msg['content']['data']), msg['user']['id'])
+                self.send_msg_by_uid(self.emotion_api(msg['user']['id'], msg['content']['data'], msg['msg_id']), msg['user']['id'])
             elif msg['msg_type_id'] == 3:
-                self.send_msg_by_uid(self.emotion_api(msg['content']['user']['id'], msg['content']['desc']), msg['user']['id'])
+                self.send_msg_by_uid(self.emotion_api(msg['content']['user']['id'], msg['content']['desc'], msg['msg_id']), msg['user']['id'])
 
 def main():
     bot = Emotion_api()
