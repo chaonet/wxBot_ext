@@ -30,7 +30,7 @@ class Emotion_api(WXBot):
 
         self.emotion_max = ''
     
-    def emotion_api(self, uid, url, msg_id):
+    def emotion_api(self, msg_id):
         if self.emotion_key == 'NULL':
             return
         print msg_id
@@ -108,10 +108,10 @@ class Emotion_api(WXBot):
                     self.auto_switch(msg)
 
         if self.robot_switch and msg['content']['type'] == 3:
-            if msg['msg_type_id'] == 4:
-                self.send_msg_by_uid(self.emotion_api(msg['user']['id'], msg['content']['data'], msg['msg_id']), msg['user']['id'])
-            elif msg['msg_type_id'] == 3:
-                self.send_msg_by_uid(self.emotion_api(msg['content']['user']['id'], msg['content']['desc'], msg['msg_id']), msg['user']['id'])
+            if msg['msg_type_id'] in [3,4]:
+                self.send_msg_by_uid(self.emotion_api(msg['msg_id']), msg['user']['id'])
+            #elif msg['msg_type_id'] == 3:
+             #   self.send_msg_by_uid(self.emotion_api(msg['msg_id']), msg['user']['id'])
 
 def main():
     bot = Emotion_api()
