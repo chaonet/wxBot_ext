@@ -33,14 +33,16 @@ class Emotion_api(WXBot):
     def emotion_api(self, msg_id):
         if self.emotion_key == 'NULL':
             return
-        print msg_id
+        # print msg_id
 
         fn = 'img_' + msg_id + '.jpg'
 
-        print fn
+        # print fn
         b = open(fn, 'rb')
-        print b
+        # print b
 
+        result = []
+        cannot = u'无法识别'
         try:
             conn = httplib.HTTPSConnection('api.projectoxford.ai')
             conn.request("POST", "/emotion/v1.0/recognize", b, self.headers)
@@ -48,21 +50,32 @@ class Emotion_api(WXBot):
             data = response.read()
 
             data = json.loads(data)
+            # print data,1
+            # [] 1
+
+            if not data:
+                return cannot
 
             emotion_list = [u'sadness', u'neutral', u'contempt', u'disgust', u'anger', u'surprise', u'fear', u'happiness']
             
-            max_value = 0
-            for i in emotion_list:
-                if data[0]['scores'][i] > max_value:
-                    self.emotion_max = i
-                    max_value = data[0]['scores'][i]
+            for i in data:
+                max_value = 0
+                for j in emotion_list:
+                    if i['scores'][j] > max_value:
+                        self.emotion_max = j
+                        max_value = i['scores'][j]
+                result.append(self.emotion_max)
 
             conn.close()
         except Exception as e:
-            print 2
+            # print 2
             print e
         emotion_dir = {u'sadness': u'很悲伤', u'neutral': u'不动声色', u'contempt': u'轻蔑', u'disgust': u'厌恶', u'anger': u'生气', u'surprise': u'惊讶', u'fear': u'害怕', u'happiness': u'开心'}
-        return emotion_dir[self.emotion_max]
+        last_result = []
+        for i in result:
+            last_result.append(emotion_dir[i])
+        #return emotion_dir[self.emotion_max]
+        return last_result
 
     def auto_switch(self, msg):
         msg_data = msg['content']['data']
@@ -109,7 +122,15 @@ class Emotion_api(WXBot):
 
         if self.robot_switch and msg['content']['type'] == 3:
             if msg['msg_type_id'] in [3,4]:
-                self.send_msg_by_uid(self.emotion_api(msg['msg_id']), msg['user']['id'])
+                # self.send_msg_by_uid(self.emotion_api(msg['msg_id']), msg['user']['id'])
+                result = self.emotion_api(msg['msg_id'])
+
+                # print type(result)
+                if result == u'无法识别':
+                    self.send_msg_by_uid(result, msg['user']['id'])
+                else:
+                    for i in self.emotion_api(msg['msg_id']):
+                        self.send_msg_by_uid(i, msg['user']['id'])
             #elif msg['msg_type_id'] == 3:
              #   self.send_msg_by_uid(self.emotion_api(msg['msg_id']), msg['user']['id'])
 
