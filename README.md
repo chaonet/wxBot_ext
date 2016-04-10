@@ -1,101 +1,31 @@
-# wxBot [![star this repo](http://github-svg-buttons.herokuapp.com/star.svg?user=liuwons&repo=wxBot&style=flat&background=1081C1)](http://github.com/liuwons/wxBot) [![fork this repo](http://github-svg-buttons.herokuapp.com/fork.svg?user=liuwons&repo=wxBot&style=flat&background=1081C1)](http://github.com/liuwons/wxBot/fork) ![python](https://img.shields.io/badge/python-2.7-ff69b4.svg)
+# 微信机器人
 
-**wxBot** 是用Python包装Web微信协议实现的微信机器人框架。
+基于[ **wxBot** ](http://github.com/liuwons/wxBot) ，一个用 Python 包装 Web微信协议 实现的微信机器人框架。
 
-目前的消息支持情况:
+## 文件介绍
 
-- [ ] 群消息
-  - [x] 文本
-  - [x] 图片
-  - [x] 地理位置
-  - [x] 个人名片
-  - [x] 语音
-  - [x] 动画
-  - [ ] 语音电话
-  - [ ] 红包
+- `wxbot.py`是框架文件
+- `bot.py`是框架作者开发的图灵机器人
+- `test.py`是框架作者的测脚本
+- `emotion.py`是自己开发的基于`微软表情识别 API`的微信机器人
 
-- [ ] 联系人消息
-  - [x] 文本
-  - [x] 图片
-  - [x] 地理位置
-  - [x] 个人名片
-  - [x] 语音
-  - [x] 小视频
-  - [x] 动画
-  - [ ] 视频电话
-  - [ ] 红包
-  - [ ] 转账
-
-
-
-Web微信协议参考资料：
-
-[挖掘微信Web版通信的全过程](http://www.tanhao.me/talk/1466.html/)
-
-[微信协议简单调研笔记](http://www.blogjava.net/yongboy/archive/2015/11/05/410636.html)
-
-[qwx: WeChat Qt frontend 微信Qt前端](https://github.com/xiangzhai/qwx)
-
-
-## 1 环境与依赖
+## 环境与依赖
 
 此版本只能运行于Python 2环境 。
 
-**wxBot** 用到了Python **requests** , **pypng** , 以及 **pyqrcode** 库。
+```
+# 下载源码
+git clone git@github.com:chaonet/wxBot_ext.git
+# 或者通过 HTTPS 下载:
+git clone https://github.com/chaonet/wxBot_ext.git
 
-使用之前需要所依赖的库:
+cd wxBot_ext
 
-```bash
-pip install requests
-pip install pyqrcode
-pip install pypng
+# 安装依赖
+pip install -r requirements.txt
 ```
 
-## 2 快速开发
-
-利用 **wxBot** 最简单的方法就是继承WXBot类并实现 `handle_msg_all` 或者 `schedule` 函数，然后实例化子类并调用 `run` 方法 。
-
-### 2.1 代码
-
-以下的代码对所有来自好友的文本消息回复 *hi* ， 并不断向好友 *tb* 发送 *schedule* 。
-
-`handle_msg_all` 函数用于处理收到的每条消息，而 `schedule` 函数可以做一些任务性的工作(例如不断向好友推送信息或者一些定时任务)。
-
-```python
-#!/usr/bin/env python
-# coding: utf-8
-
-import time
-from wxbot import *
-
-class MyWXBot(WXBot):
-    def handle_msg_all(self, msg):
-        if msg['msg_type_id'] == 4 and msg['content']['type'] == 0:
-            self.send_msg_by_uid('hi', msg['user']['id'])
-
-    def schedule(self):
-        self.send_msg('tb', 'schedule')
-        time.sleep(1)
-
-def main():
-    bot = MyWXBot()
-    bot.DEBUG = True
-    bot.run()
-
-if __name__ == '__main__':
-    main()
-
-```
-
-### 2.2 运行
-
-直接用 `python` 运行代码(如运行测试代码 ***test.py*** ):
-
-``` python
-python test.py
-```
-
-### 2.3 登录微信
+### 登录微信
 
 程序运行之后，会在当前目录下生成二维码图片文件 ***qr.png*** 并自动打开，用微信扫描此二维码并按操作指示确认登录网页微信。
 
@@ -103,7 +33,7 @@ python test.py
 
 ![login_on_ubuntu](img/login_on_ubuntu.png)
 
-## 3 效果展示
+## 效果展示
 
 测试代码 ***test.py*** 的运行效果：
 
@@ -111,95 +41,8 @@ python test.py
 
 ![后台](img/backfront.jpg)
 
-## 4 接口
-### 4.1 `handle_msg_all`
 
-`handle_msg_all` 函数的参数 `msg` 是代表一条消息的字典。字段的内容为：
-
-| 字段名 | 字段内容 |
-| ----- | --- |
-| `msg_type_id` | 整数，消息类型，具体解释可以查看 **消息类型表** |
-| `msg_id` | 字符串，消息id |
-| `content` | 字典，消息内容，具体含有的字段请参考 **消息类型表** ，一般含有 `type`(数据类型)与 `data`(数据内容)字段，`type` 与 `data`的对应关系可以参考 **数据类型表**  |
-| `user` | 字典，消息来源，字典包含 `name`(发送者名称,如果是群则为群名称，如果为微信号，有备注则为备注名，否则为微信号或者群昵称)字段与 `id`(发送者id)字段，都是字符串  |
-
-
-### 4.2 消息类型表
-
-| 类型号 | 消息类型 | `content` |
-| ----- | --- | ------ |
-| 0 | 初始化消息，内部数据 | 无意义，可以忽略 |
-| 1 | 自己发送的消息 | 无意义，可以忽略 |
-| 2 | 文件消息 | 字典，包含 `type` 与 `data` 字段 |
-| 3 | 群消息 | 字典， 包含 `user` (字典，包含 `id` 与 `name`字段，都是字符串，表示发送此消息的群用户)与 `type` 、 `data` 字段，红包消息只有 `type` 字段， 文本消息还有detail、desc字段， 参考 **群文本消息** |
-| 4 | 联系人消息 | 字典，包含 `type` 与 `data` 字段 |
-| 5 | 公众号消息 | 字典，包含 `type` 与 `data` 字段 |
-| 6 | 特殊账号消息 | 字典，包含 `type` 与 `data` 字段 |
-| 99 | 未知账号消息 | 无意义，可以忽略 |
-
-
-### 4.3 数据类型表
-
-| `type` | 数据类型 | `data` |
-| ---- | ---- | ------ |
-| 0 | 文本 | 字符串，表示文本消息的具体内容 |
-| 1 | 地理位置 | 字符串，表示地理位置 |
-| 3 | 图片 | 字符串，图片数据的url，HTTP POST请求此url可以得到jpg文件格式的数据 |
-| 4 | 语音 | 字符串，语音数据的url，HTTP POST请求此url可以得到mp3文件格式的数据 |
-| 5 | 名片 | 字典，包含 `nickname` (昵称)， `alias` (别名)，`province` (省份)，`city` (城市)， `gender` (性别)字段 |
-| 6 | 动画 | 字符串， 动画url, HTTP POST请求此url可以得到gif文件格式的数据 |
-| 7 | 分享 | 字典，包含 `type` (类型)，`title` (标题)，`desc` (描述)，`url` (链接)，`from` (源网站)字段 |
-| 8 | 视频 | 不可用 |
-| 9 | 视频电话 | 不可用 |
-| 10 | 撤回消息 | 不可用 |
-| 11 | 空内容 | 空字符串 |
-| 12 | 红包 | 不可用 |
-| 99 | 未知类型 | 不可用 |
-
-### 4.4 群文本消息
-
-由于群文本消息中可能含有@信息，因此群文本消息的 `content` 字典除了含有 `type` 与 `data` 字段外，还含有 `detail` 与 `desc` 字段。
-
-各字段内容为：
-
-| 字段 | 内容 |
-| --- | ---- |
-| `type` | 数据类型， 为0(文本) |
-| `data` | 字符串，消息内容，含有@信息 |
-| `desc` | 字符串，删除了所有@信息 |
-| `detail` | 数组，元素类型为含有 `type` 与 `value` 字段的字典， `type` 为字符串 ***str*** (表示元素为普通字符串，此时value为消息内容) 或 ***at*** (表示元素为@信息， 此时value为所@的用户名) |
-
-
-### 4.5 WXBot对象属性
-
-**WXBot** 对象在登录并初始化之后,含有以下的可用数据:
-
-| 属性 | 描述 |
-| ---- | ---- |
-| `contact_list` | 当前用户的微信联系人列表 |
-| `group_list` | 当前用户的微信群列表 |
-| `public_list` | 当前用户关注的公众号列表 |
-| `special_list` | 特殊账号列表 |
-| `session` | **WXBot** 与WEB微信服务器端交互所用的 **Requests** `Session` 对象 |
-
-### 4.6 WXBot对象方法
-
-**WXBot** 对象还含有一些可以利用的方法
-
-| 方法 | 描述 |
-| ---- | --- |
-| `get_icon(id)` | 获取用户icon并保存到本地文件 ***img_[id].jpg***  , `id` 为用户id(Web微信数据) |
-| `get_head_img(id)` | 获取用户头像并保存到本地文件 ***img_[id].jpg*** ，`id` 为用户id(Web微信数据) |
-| `get_msg_img(msgid)` | 获取图像消息并保存到本地文件 ***img_[msgid].jpg*** , `msgid` 为消息id(Web微信数据) |
-| `get_voice(msgid)` | 获取语音消息并保存到本地文件 ***voice_[msgid].mp3*** , `msgid` 为消息id(Web微信数据) |
-| `get_contact_name(uid)` | 获取微信id对应的名称，返回一个可能包含 `remark_name` (备注名), `nickname` (昵称), `display_name` (群名称)的字典|
-| `send_msg_by_uid(word, dst)` | 向好友发送消息，`word` 为消息字符串，`dst` 为好友用户id(Web微信数据) |
-| `send_msg(name, word, isfile)` | 向好友发送消息，`name` 为好友的备注名或者好友微信号， `isfile`为 `False` 时 `word` 为消息，`isfile` 为 `True` 时 `word` 为文件路径(此时向好友发送文件里的每一行)，此方法在有重名好友时会有问题，因此更推荐使用 `send_msg_by_uid(word, dst)` |
-| `is_contact(uid)` | 判断id为 `uid` 的账号是否是本帐号的好友，返回 `True` (是)或 `False` (不是) |
-| `is_public(uid)` | 判断id为 `uid` 的账号是否是本帐号所关注的公众号，返回 `True` (是)或 `False` (不是) |
-
-
-## 5 群聊机器人示例
+## 图灵机器人示例
 
 ***bot.py*** 用 **[图灵机器人](http://www.tuling123.com/)** API 以及 **wxBot** 实现了一个自动回复机器人.
 
@@ -244,6 +87,48 @@ python test.py
     python bot.py
     ```
 
-## 6 帮助项目
+## 表情识别
 
-欢迎对本项目提意见、贡献代码，参考: [如何帮助项目](https://github.com/liuwons/wxBot/wiki/How-to-contribute)
+基于微软的[Emotion API](https://dev.projectoxford.ai/docs/services/5639d931ca73072154c1ce89/operations/563b31ea778daf121cc3a5fa)和 **wxBot** 实现的一个表情识别机器人。
+
+此机器人开启后，会对来自联系人以及群里发来的图片中，人的表情进行识别。
+
+联系人使用：
+
+可以通过发送 *退下* 、 *走开* 、 *关闭* 、 *关掉* 、 *休息* 、 *滚开* 来关闭机器人的表情识别。
+
+也可以通过发送 *出来* 、 *启动* 、 *工作* 来开启机器人的表情识别。
+
+微信群：
+
+`@ 运行的账号`，文字内容同上
+
+***emotion.py*** 的使用方法：
+
+1. 在[Microsoft 帐户](https://signup.live.com/signup?client_id=b5dbf12c-811e-4f91-aee1-da81da0a2c94&scope=wl.signin+wl.emails&response_type=code&redirect_uri=https%3a%2f%2fwww.microsoft.com%2fcognitive-services%2fExternal%2fLogOn%3fReturnUrl%3d%252Fcognitive-services%252Fen-us%252Fsubscriptions%26__provider__%3dmicrosoft%26__sid__%3d982ef9f4e2144c559ead125762275e8b&contextid=56BC9228173FD4B5&bk=1460244662&ru=https%3a%2f%2flogin.live.com%2foauth20_authorize.srf%3fclient_id%3db5dbf12c-811e-4f91-aee1-da81da0a2c94%26scope%3dwl.signin%2520wl.emails%26response_type%3dcode%26redirect_uri%3dhttps%253A%252F%252Fwww.microsoft.com%252Fcognitive-services%252FExternal%252FLogOn%253FReturnUrl%253D%25252Fcognitive-services%25252Fen-us%25252Fsubscriptions%2526__provider__%253Dmicrosoft%2526__sid__%253D982ef9f4e2144c559ead125762275e8b%26contextid%3d56BC9228173FD4B5%26mkt%3dZH-CN%26lc%3d2052%26bk%3d1460244662&uiflavor=web&uaid=9893f67eb6ee4346b986ae91c75543ad&mkt=ZH-CN&lc=2052&lic=1)注册账号，申请 API key。
+
+2. 在 ***emotion.py*** 文件所在目录下新建 ***conf.ini*** 文件，内容为:(emotion_key字段内容为申请到的 微软emotion API 的key)
+
+    ```
+    [main]
+    emotion_key=1d2678900f734aa0a23734ace8aec5b1
+    ```
+
+3. 运行 ***emotion.py***
+
+    ```python
+    python emotion.py
+    ```
+
+### 折腾历史
+
+- 申请 emotion API 的 key
+
+只需注册一个 Microsoft 帐户
+
+- 传送图片的格式
+`emotion API`可以通过两种方式接收图片文件。
+   - 一种是`application/JSON`格式，原始内容为字典`{ "url": "http://example.com/picture.jpg" }`，在发送前需要通过`json.dumps(data)`编码为字符串，然后才能成功发送给`emotion API`，接收时需要`json.loads(data)`解码。但微信框架获取到的图片链接，格式：`https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetmsgimg?MsgID=5763688365154314773&skey=@crypt_115bea6f_2a9e4bb833ca9c156ebb3d71dd48f4bb`无法直接打开图片。
+   - 第二种是`application/octet-stream`格式，也就是二进制的图片数据，因为框架自动在本地保存了接收到的图片，所以通过`open(fn, 'rb')`，以二进制方式打开，接收回复时同样需要`json.loads(data)`解码。
+
+[Python - unhashable type error in urllib2](http://stackoverflow.com/questions/3893292/python-unhashable-type-error-in-urllib2)
